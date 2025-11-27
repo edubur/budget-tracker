@@ -1,13 +1,11 @@
 namespace BudgetTracker.Services;
 
-// Handles logging of transactions based on raised events.
-// This class is fully event-driven and contains no business logic.
+// Handles event-driven logging.
+// Logging failures never interrupt application flow.
 public class LoggerService
 {
     private readonly string _logFilePath;
 
-    // Constructor requires the log file path.
-    // Ensures the directory exists before writing.
     public LoggerService(string logFilePath)
     {
         _logFilePath = logFilePath;
@@ -20,24 +18,30 @@ public class LoggerService
         }
     }
 
-    // Subscribes to the TransactionAdded event.
+    // Subscribes to transaction add events.
     public void Subscribe(TransactionService service)
     {
         service.TransactionAdded += OnTransactionAdded;
     }
 
-    // Handles the TransactionAdded event.
-    // Writes a formatted log entry for each transaction.
+    // Writes entries safely and suppresses file system failures.
     private void OnTransactionAdded(object? sender, Events.TransactionAddedEventArgs e)
     {
-        var transaction = e.Transaction;
+        try
+        {
+            var transaction = e.Transaction;
 
-        string sign = transaction.Type == Models.TransactionType.Income ? "+" : "-";
+            string sign = transaction.Type == Models.TransactionType.Income ? "+" : "-";
 
-        string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] " +
-                       $"{transaction.Type} | {sign}{transaction.Amount:F2} | " +
-                       $"{transaction.Description}";
+            string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] " +
+                           $"{transaction.Type} | {sign}{transaction.Amount:F2} | " +
+                           $"{transaction.Description}";
 
-        File.AppendAllText(_logFilePath, entry + Environment.NewLine);
+            File.AppendAllText(_logFilePath, entry + Environment.NewLine);
+        }
+        catch
+        {
+            // Logging errors are intentionally ignored.
+        }
     }
 }
