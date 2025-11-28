@@ -1,0 +1,60 @@
+@startuml ProgramFlow
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #ffffff
+  BorderColor #333333
+  ArrowColor #333333
+  FontName Courier
+}
+start
+:Initialize directories (data/, logs/);
+:Create services\nStorageService\nTransactionService\nLoggerService (subscribe);
+repeat
+:Clear console & show menu; 
+:Read user choice; 
+-> Choice
+if (Add Transaction?) then (1)
+  :Prompt for type, description, amount; 
+  if (Valid?) then (yes)
+    :TransactionService.Add();
+    :StorageService.AppendTransaction();
+    :Event TransactionAdded fired; 
+    :LoggerService logs entry; 
+  else (no)
+    :Show validation error; 
+  endif
+  -> BackToMenu
+elseif (Remove Transaction?) then (2)
+  :Prompt for date; 
+  :Load transactions for date; 
+  if (Any found?) then (yes)
+    :Prompt for GUID & confirm; 
+    :TransactionService.Remove(); 
+    :Show success/fail; 
+  else (no)
+    :Notify none found; 
+  endif
+  -> BackToMenu
+elseif (Generate Report?) then (3)
+  :Prompt for start & end dates; 
+  if (Range valid?) then (yes)
+    :TransactionService.GetByDateRange(); 
+    :Group by day & compute totals; 
+    :Display per-day & grand totals; 
+  else (no)
+    :Show range error; 
+  endif
+  -> BackToMenu
+elseif (Exit?) then (4)
+  :Confirm exit; 
+  if (Confirmed?) then (yes)
+    stop
+  else (no)
+    -> BackToMenu
+  endif
+else (Invalid)
+  :Show invalid selection; 
+  -> BackToMenu
+endif
+repeat while (Running)
+@enduml

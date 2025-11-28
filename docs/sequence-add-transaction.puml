@@ -1,0 +1,30 @@
+@startuml AddTransactionSequence
+skinparam shadowing false
+skinparam sequenceArrowColor #333333
+skinparam sequenceParticipantFontName Courier
+
+actor User
+participant Program
+participant TransactionService
+participant StorageService
+participant LoggerService
+
+User -> Program : Select "Add Transaction"
+Program -> User : Prompt type/description/amount
+User --> Program : Provide inputs
+Program -> TransactionService : Add(transaction)
+activate TransactionService
+TransactionService -> StorageService : AppendTransaction(transaction)
+activate StorageService
+StorageService --> TransactionService : persisted
+deactivate StorageService
+TransactionService -> TransactionService : OnTransactionAdded()
+TransactionService -> LoggerService : event TransactionAdded
+activate LoggerService
+LoggerService -> LoggerService : Write log entry
+LoggerService --> TransactionService : (return)
+Program <-- TransactionService : success
+deactivate LoggerService
+deactivate TransactionService
+Program -> User : Show success message
+@enduml
