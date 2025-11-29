@@ -1,0 +1,63 @@
+@startuml ClassDiagram
+skinparam shadowing false
+skinparam classFontName Courier
+skinparam classAttributeIconSize 0
+
+class Program <<entrypoint>> {
+  + Main loop
+  + AddTransaction()
+  + RemoveTransaction()
+  + GenerateReport()
+}
+
+class TransactionService {
+  - StorageService _storageService
+  + Add(Transaction)
+  + Remove(Guid, DateTime)
+  + GetByDateRange(DateTime, DateTime)
+  + event TransactionAdded
+}
+
+class StorageService {
+  - string _dataDirectory
+  + ReadByDate(DateTime)
+  + WriteByDate(DateTime, List<Transaction>)
+  + AppendTransaction(Transaction)
+  + DeleteTransaction(Guid, DateTime)
+  + GetFilesInRange(DateTime, DateTime)
+  + ReadFromFile(string)
+}
+
+class LoggerService {
+  - string _logFilePath
+  + Subscribe(TransactionService)
+  - OnTransactionAdded(sender, TransactionAddedEventArgs)
+}
+
+class TransactionAddedEventArgs {
+  + Transaction Transaction
+}
+
+class Transaction {
+  + Guid Id
+  + DateTime Timestamp
+  + DateTime Date
+  + TransactionType Type
+  + string Description
+  + decimal Amount
+}
+
+enum TransactionType {
+  Income
+  Expense
+}
+
+Program --> TransactionService : uses
+Program --> LoggerService : uses
+TransactionService --> StorageService : depends
+TransactionService --> TransactionAddedEventArgs : raises
+TransactionAddedEventArgs --> Transaction
+LoggerService ..> TransactionService : subscribes to event
+StorageService --> Transaction : persists
+Transaction --> TransactionType
+@enduml
